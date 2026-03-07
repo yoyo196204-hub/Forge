@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#030303">
+<title>FORGE Protocol</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030303; --surface: #0f0f11; --surface-lifted: #1a1a1e;
+    --border: #27272a; --text: #f4f4f5; --text-muted: #a1a1aa;
+    --cyan: #00f0ff; --cyan-glow: rgba(0, 240, 255, 0.3);
+    --green: #39ff14; --orange: #ff6b00; --red: #ff003c;
+    --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100dvh; max-width: 500px; margin: 0 auto; overflow-x: hidden; }
+
+  /* HUD Header */
+  .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(3,3,3,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; }
+  .logo { font-size: 24px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  .logo span { color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
+  .streak { font-family: 'JetBrains Mono', monospace; color: var(--orange); font-size: 14px; font-weight: 700; background: rgba(255, 107, 0, 0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 107, 0, 0.3); }
+
+  /* Interactive Body Map HUD */
+  .hud-container { position: relative; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; background: radial-gradient(circle at center, rgba(0,240,255,0.05) 0%, transparent 70%); }
+  .hud-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); letter-spacing: 3px; margin-bottom: 20px; text-transform: uppercase; animation: pulseText 2s infinite; }
+  
+  .body-svg { width: 100%; max-width: 220px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.1)); overflow: visible; }
+  .muscle { fill: var(--surface-lifted); stroke: var(--border); stroke-width: 2; transition: all 0.3s var(--spring); cursor: pointer; }
+  .muscle:active { fill: var(--cyan); filter: drop-shadow(0 0 12px var(--cyan)); transform: scale(0.95); }
+  .muscle.active-day { fill: rgba(0, 240, 255, 0.2); stroke: var(--cyan); animation: breath 3s infinite alternate; }
+  .muscle-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--text-muted); pointer-events: none; transition: all 0.3s; font-weight: 700; }
+  .muscle:active + .muscle-label, .muscle.active-day + .muscle-label { fill: var(--cyan); text-shadow: 0 0 5px var(--cyan); }
+
+  /* Main Content Area */
+  .content { padding: 20px; padding-bottom: 100px; animation: slideUp 0.5s var(--spring) forwards; }
+  .day-header { margin-bottom: 20px; border-left: 3px solid var(--cyan); padding-left: 12px; }
+  .day-title { font-size: 28px; font-weight: 800; }
+  .day-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+
+  /* Fidgety Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.2s var(--spring), border-color 0.3s; }
+  .card.completed { border-color: rgba(57, 255, 20, 0.3); background: linear-gradient(180deg, rgba(57,255,20,0.05) 0%, transparent 100%); }
+  
+  .ex-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .ex-name { font-size: 16px; font-weight: 600; line-height: 1.2; }
+  .ex-meta { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface-lifted); padding: 4px 8px; border-radius: 6px; color: var(--cyan); }
+  .ex-cue { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; padding-left: 10px; border-left: 2px solid var(--border); }
+
+  /* Bouncy Set Circles */
+  .set-container { display: flex; gap: 12px; flex-wrap: wrap; }
+  .set-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--surface-lifted); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.4s var(--spring); position: relative; }
+  
+  .set-circle::after { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px; border-radius: 50%; border: 2px solid var(--cyan); opacity: 0; transform: scale(1.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  
+  /* Interaction States for Sets */
+  .set-circle:active { transform: scale(0.8); background: var(--border); }
+  .set-circle.done { background: var(--cyan); border-color: var(--cyan); color: #000; transform: scale(1.05); box-shadow: 0 0 15px var(--cyan-glow); }
+  .set-circle.done::after { opacity: 1; transform: scale(1); border-color: transparent; }
+
+  /* Traffic Light Pain Panel */
+  .pain-panel { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); animation: fadeDown 0.3s var(--spring) forwards; }
+  .pain-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .pain-btn { padding: 12px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-lifted); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text); cursor: pointer; transition: all 0.2s var(--spring); }
+  .pain-btn:active { transform: scale(0.9); }
+  .pain-btn.g:active { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 10px var(--green); }
+  .pain-btn.a:active { background: var(--orange); color: #000; border-color: var(--orange); box-shadow: 0 0 10px var(--orange); }
+  .pain-btn.r:active { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 10px var(--red); }
+
+  /* Animations */
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulseText { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  @keyframes breath { 0% { filter: drop-shadow(0 0 2px var(--cyan)); } 100% { filter: drop-shadow(0 0 12px var(--cyan)); } }
+
+  /* Floating Nav */
+  .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 15, 17, 0.8); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 30px; display: flex; padding: 8px; gap: 8px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+  .nav-btn { padding: 12px 24px; border-radius: 20px; color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 6px; }
+  .nav-btn.active { background: var(--text); color: var(--bg); }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">FOR<span>GE</span></div>
+    <div class="streak">🔥 STREAK: 12</div>
+  </div>
+
+  <div class="hud-container">
+    <div class="hud-title">Select Target Vector</div>
+    <svg class="body-svg" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+      <path class="muscle" id="m-shoulders" onclick="loadWorkout('thursday')" d="M50,80 Q40,90 35,110 L60,110 Z" />
+      <path class="muscle" id="m-shoulders2" onclick="loadWorkout('thursday')" d="M150,80 Q160,90 165,110 L140,110 Z" />
+      <text x="10" y="90" class="muscle-label">DELTS</text>
+      
+      <path class="muscle" id="m-chest" onclick="loadWorkout('monday')" d="M65,85 Q100,95 135,85 L130,120 Q100,130 70,120 Z" />
+      <text x="85" y="105" class="muscle-label">CHEST</text>
+      
+      <rect class="muscle" id="m-arms" onclick="loadWorkout('thursday')" x="25" y="115" width="22" height="60" rx="10" />
+      <rect class="muscle" id="m-arms2" onclick="loadWorkout('thursday')" x="153" y="115" width="22" height="60" rx="10" />
+      
+      <path class="muscle" id="m-core" onclick="loadWorkout('saturday')" d="M70,125 Q100,135 130,125 L120,190 Q100,200 80,190 Z" />
+      <text x="86" y="160" class="muscle-label">CORE</text>
+      
+      <path class="muscle" id="m-legs" onclick="loadWorkout('tuesday')" d="M75,195 L55,300 L90,300 L95,195 Z" />
+      <path class="muscle" id="m-legs2" onclick="loadWorkout('tuesday')" d="M125,195 L145,300 L110,300 L105,195 Z" />
+      <text x="155" y="250" class="muscle-label">QUADS</text>
+    </svg>
+  </div>
+
+  <div class="content" id="workoutData">
+    </div>
+
+  <div class="nav">
+    <div class="nav-btn active">PROTOCOL</div>
+    <div class="nav-btn" onclick="alert('Module loading...')">LOGS</div>
+  </div>
+
+<script>
+  // Haptic Engine
+  function vibrate(intensity) {
+    if (!navigator.vibrate) return;
+    if (intensity === 'light') navigator.vibrate(20);
+    if (intensity === 'heavy') navigator.vibrate([40, 30, 40]);
+  }
+
+  // Database (Your exact PDF protocol)
+  const DATABASE = {
+    monday: {
+      id: "monday", target: "m-chest",
+      title: "Upper A", sub: "Chest & Back",
+      exercises: [
+        { name: "Dead Hangs", sets: 2, meta: "Bodyweight", cue: "Fully relax shoulders. Decompress first." },
+        { name: "Wall Slides", sets: 3, meta: "Bodyweight", cue: "Forearms on wall, protract at top, push wall away." },
+        { name: "Y-Raises (Incline)", sets: 3, meta: "1-2 kg", cue: "Thumbs up. Squeeze blades DOWN not just in.", pain: true },
+        { name: "Incline DB Press", sets: 3, meta: "Moderate", cue: "No wrist flare. Elbows ~45°." },
+        { name: "Seated Cable Row", sets: 3, meta: "Moderate", cue: "Retract blade FIRST, then pull arm." }
+      ]
+    },
+    tuesday: {
+      id: "tuesday", target: "m-legs",
+      title: "Lower A", sub: "Machine Quads + Calves",
+      exercises: [
+        { name: "Dynamic Stretches", sets: 1, meta: "5 min", cue: "Hip circles, leg swings, bodyweight squats." },
+        { name: "Leg Press", sets: 3, meta: "Moderate", cue: "Feet neutral width. Full range." },
+        { name: "Leg Extensions", sets: 3, meta: "Light-Mod", cue: "3-sec eccentric. Do NOT drop weight." },
+        { name: "Leg Curls", sets: 3, meta: "Light-Mod", cue: "Control the negative. No jerking." }
+      ]
+    },
+    thursday: {
+      id: "thursday", target: "m-shoulders",
+      title: "Upper B", sub: "Shoulders & Arms",
+      exercises: [
+        { name: "Wall Slides ★ NEW", sets: 3, meta: "Bodyweight", cue: "Protract fully at top. Push wall away." },
+        { name: "Seated DB Press", sets: 3, meta: "Moderate", cue: "PAIN RULE applies. Scapular plane (30° forward).", pain: true },
+        { name: "DB Scaption", sets: 3, meta: "Light", cue: "Thumbs UP strictly." },
+        { name: "External Rotation", sets: 3, meta: "2-3kg MAX", cue: "Side-lying. Towel under elbow. 3-sec eccentric." },
+        { name: "Reverse Pec Deck", sets: 4, meta: "Moderate", cue: "Control the return. No momentum." }
+      ]
+    },
+    saturday: {
+      id: "saturday", target: "m-core",
+      title: "Sweeper", sub: "Cardio & Core",
+      exercises: [
+        { name: "Treadmill/Bike", sets: 1, meta: "45-60 min", cue: "High Effort. Make up for skipped cardio." },
+        { name: "Deadbugs", sets: 3, meta: "10/side", cue: "Arm goes overhead = bonus serratus activation." },
+        { name: "Deep Sleeper Stretch", sets: 5, meta: "30s holds", cue: "Deep capsular work. More time, no gym pressure." }
+      ]
+    }
+  };
+
+  function loadWorkout(dayKey) {
+    vibrate('light');
+    const data = DATABASE[dayKey];
+    if(!data) return;
+
+    // Reset HUD glow
+    document.querySelectorAll('.muscle').forEach(m => m.classList.remove('active-day'));
+    
+    // Light up target muscles on the SVG
+    if(data.target) {
+      document.getElementById(data.target).classList.add('active-day');
+      // Light up secondary parts if they exist (like second arm/leg)
+      const sec = document.getElementById(data.target + '2');
+      if(sec) sec.classList.add('active-day');
+    }
+
+    let html = `
+      <div class="day-header">
+        <div class="day-title">${data.title}</div>
+        <div class="day-sub">${data.sub.toUpperCase()}</div>
+      </div>
+    `;
+
+    data.exercises.forEach((ex, idx) => {
+      let circles = '';
+      for(let i=1; i<=ex.sets; i++) {
+        circles += `<div class="set-circle" onclick="tapSet(this, ${ex.pain})">${i}</div>`;
+      }
+
+      html += `
+        <div class="card" id="card-${idx}">
+          <div class="ex-header">
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-meta">${ex.sets} SETS • ${ex.meta}</div>
+          </div>
+          <div class="ex-cue">${ex.cue}</div>
+          <div class="set-container">${circles}</div>
+          
+          ${ex.pain ? `
+          <div class="pain-panel">
+            <div class="pain-title">⚠ Post-Set Pain Check</div>
+            <div class="pain-grid">
+              <button class="pain-btn g" onclick="logPain(this)">≤3 OK</button>
+              <button class="pain-btn a" onclick="logPain(this)">4-5 (-20%)</button>
+              <button class="pain-btn r" onclick="logPain(this)">>5 STOP</button>
+            </div>
+          </div>` : ''}
+        </div>
+      `;
+    });
+
+    const container = document.getElementById('workoutData');
+    container.innerHTML = html;
+    
+    // Re-trigger the slide-up animation
+    container.style.animation = 'none';
+    container.offsetHeight; /* trigger reflow */
+    container.style.animation = null; 
+    
+    // Scroll down to the workout smoothly
+    setTimeout(() => {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  function tapSet(element, hasPainCheck) {
+    if (element.classList.contains('done')) {
+      element.classList.remove('done');
+      vibrate('light');
+    } else {
+      element.classList.add('done');
+      vibrate('heavy');
+      
+      // Check if all sets are done to highlight card
+      const card = element.closest('.card');
+      const totalSets = card.querySelectorAll('.set-circle').length;
+      const doneSets = card.querySelectorAll('.set-circle.done').length;
+      
+      if(totalSets === doneSets) {
+        card.classList.add('completed');
+        setTimeout(() => vibrate('light'), 200);
+      } else {
+        card.classList.remove('completed');
+      }
+
+      // Drop down traffic light if needed
+      if (hasPainCheck) {
+        const panel = element.parentElement.nextElementSibling;
+        panel.style.display = 'block';
+      }
+    }
+  }
+
+  function logPain(btn) {
+    vibrate('heavy');
+    const panel = btn.closest('.pain-panel');
+    panel.style.display = 'none';
+  }
+
+  // Auto-load Thursday (Upper B) since today is Saturday March 7, 
+  // but let's default to Thursday as it's a heavy shoulder day in your protocol 
+  // (or you can tap the body map!)
+  window.onload = () => {
+    loadWorkout('thursday');
+  };
+</script>
+</body>
+</html>
