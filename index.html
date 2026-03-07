@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#050505">
+<title>FORGE Protocol</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505; --surface: #111; --surface-border: #222;
+    --text: #fff; --text-dim: #666; --text-muted: #888;
+    --cyan: #00e5ff; --cyan-dim: rgba(0, 229, 255, 0.1);
+    --green: #00ff88; --orange: #ffaa00; --red: #ff3366;
+    --font-sans: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    --spring: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100dvh; max-width: 480px; margin: 0 auto; overflow-x: hidden; }
+
+  /* Top Navigation & Weekly Overview */
+  .top-nav { position: sticky; top: 0; background: rgba(5,5,5,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--surface-border); z-index: 100; padding: 16px 20px 12px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+  .logo { font-size: 20px; font-weight: 900; letter-spacing: 1px; }
+  .logo span { color: var(--cyan); }
+  .sub-status { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  
+  .week-grid { display: flex; justify-content: space-between; align-items: center; }
+  .day-node { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; opacity: 0.5; transition: opacity 0.3s; }
+  .day-node.active { opacity: 1; }
+  .day-node.active .day-dot { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-dim); }
+  .day-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
+  .day-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-dim); background: transparent; transition: all 0.3s var(--spring); }
+
+  /* Main Content Layout */
+  .container { padding: 20px; padding-bottom: 120px; animation: fadeIn 0.4s ease; }
+  .section-title { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex-grow: 1; height: 1px; background: var(--surface-border); }
+
+  /* Functional Cards */
+  .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; transition: border-color 0.3s; }
+  .card.complete { border-color: var(--green); }
+  
+  .ex-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .ex-name { font-size: 16px; font-weight: 700; }
+  .ex-load { font-family: var(--font-mono); font-size: 11px; color: var(--cyan); background: var(--cyan-dim); padding: 4px 8px; border-radius: 4px; }
+  .ex-cue { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; border-left: 2px solid var(--surface-border); padding-left: 10px; }
+
+  /* Interactive Set Blocks */
+  .set-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 8px; }
+  .set-block { height: 44px; border-radius: 8px; background: transparent; border: 1px solid var(--text-dim); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .set-block:active { transform: scale(0.9); }
+  .set-block.filled { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 700; transform: scale(1.02); }
+
+  /* Traffic Light Panel */
+  .pain-panel { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--surface-border); }
+  .pain-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .pain-btn { padding: 10px 0; border-radius: 6px; border: 1px solid var(--surface-border); background: transparent; font-family: var(--font-mono); font-size: 11px; color: var(--text); cursor: pointer; transition: all 0.2s; }
+  .pain-btn:active { transform: scale(0.95); }
+  .pain-btn.g:active { background: var(--green); color: var(--bg); border-color: var(--green); }
+  .pain-btn.a:active { background: var(--orange); color: var(--bg); border-color: var(--orange); }
+  .pain-btn.r:active { background: var(--red); color: var(--bg); border-color: var(--red); }
+
+  /* Auto-Rest HUD */
+  .timer-hud { position: fixed; top: 85px; left: 50%; transform: translateX(-50%) translateY(-150%); background: var(--cyan); color: var(--bg); padding: 8px 16px; border-radius: 20px; font-family: var(--font-mono); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 12px; z-index: 90; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.2); transition: transform 0.4s var(--spring); }
+  .timer-hud.visible { transform: translateX(-50%) translateY(0); }
+  .timer-hud button { background: rgba(0,0,0,0.1); border: none; font-family: var(--font-sans); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; cursor: pointer; }
+
+  /* Floating Settings Toggle */
+  .fab { position: fixed; bottom: 30px; right: 20px; width: 50px; height: 50px; border-radius: 25px; background: var(--surface); border: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 100; transition: transform 0.2s; }
+  .fab:active { transform: scale(0.9); }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+  <div class="top-nav">
+    <div class="header-row">
+      <div class="logo">FOR<span>GE</span></div>
+      <div class="sub-status">Protocol Engine</div>
+    </div>
+    <div class="week-grid" id="weekGrid">
+      </div>
+  </div>
+
+  <div class="timer-hud" id="timerHud">
+    REST: <span id="timeDisplay">01:00</span>
+    <button onclick="skipRest()">SKIP</button>
+  </div>
+
+  <div class="container" id="mainContent">
+    </div>
+
+  <div class="fab" onclick="alert('Settings Module: Data Export, Rest Duration, and Pain Strictness will live here.')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </div>
+
+<script>
+  // Core Haptic Engine
+  function pulse(type) {
+    if (!navigator.vibrate) return;
+    if (type === 'light') navigator.vibrate(15);
+    if (type === 'heavy') navigator.vibrate([30, 40, 30]);
+  }
+
+  [span_9](start_span)[span_10](start_span)[span_11](start_span)[span_12](start_span)[span_13](start_span)[span_14](start_span)[span_15](start_span)[span_16](start_span)// Database Mapping[span_9](end_span)[span_10](end_span)[span_11](end_span)[span_12](end_span)[span_13](end_span)[span_14](end_span)[span_15](end_span)[span_16](end_span)
+  const PROTOCOL = {
+    daily: [
+      { id: "d1", name: "Sleeper Stretch", sets: 3, meta: "30s", cue: "Scapula flat on floor. Deep stretch back of shoulder." },
+      { id: "d2", name: "Pec Minor Stretch", sets: 3, meta: "30s", cue: "Hip height. NOT high doorway position." }
+    ],
+    0: { // Sunday
+      name: "Total Rest",
+      exs: []
+    },
+    1: { // Monday
+      name: "Upper A",
+      exs: [
+        { id: "m1", name: "Dead Hangs", sets: 2, meta: "30s", cue: "Fully relax shoulders. Decompress first." },
+        { id: "m2", name: "Wall Slides", sets: 3, meta: "12 reps", cue: "Forearms on wall, protract at top." },
+        { id: "m3", name: "Y-Raises (Incline)", sets: 3, meta: "1-2 kg", cue: "Thumbs up. Squeeze blades DOWN.", pain: true },
+        { id: "m4", name: "Incline DB Press", sets: 3, meta: "Mod", cue: "No wrist flare. Elbows ~45°." },
+        { id: "m5", name: "Seated Cable Row", sets: 3, meta: "Mod", cue: "Retract blade FIRST, then pull arm." }
+      ]
+    },
+    2: { // Tuesday
+      name: "Lower A",
+      exs: [
+        { id: "t1", name: "Leg Press", sets: 3, meta: "Mod", cue: "Feet neutral width. Full range." },
+        { id: "t2", name: "Leg Extensions", sets: 3, meta: "Light-Mod", cue: "3-sec eccentric. Do NOT drop weight." },
+        { id: "t3", name: "Leg Curls", sets: 3, meta: "Light-Mod", cue: "Control the negative. No jerking." }
+      ]
+    },
+    3: { // Wednesday
+      name: "Active Recovery",
+      exs: [
+        { id: "w1", name: "Wall Slides", sets: 2, meta: "10 reps", cue: "Motor Pattern Reinforcement. Very light." },
+        { id: "w2", name: "Brisk Walk", sets: 1, meta: "45m", cue: "Listen to lectures while walking." }
+      ]
+    },
+    4: { // Thursday
+      name: "Upper B",
+      exs: [
+        { id: "th1", name: "Wall Slides", sets: 3, meta: "12 reps", cue: "Protract fully at top. Push wall away." },
+        { id: "th2", name: "Seated DB Press", sets: 3, meta: "Mod", cue: "Scapular plane (30° forward).", pain: true },
+        { id: "th3", name: "DB Scaption", sets: 3, meta: "Light", cue: "Thumbs UP strictly." },
+        { id: "th4", name: "External Rotation", sets: 3, meta: "2-3kg MAX", cue: "Side-lying. Towel under elbow. 3-sec eccentric." }
+      ]
+    },
+    5: { // Friday
+      name: "Lower B",
+      exs: [
+        { id: "f1", name: "Leg Press (High)", sets: 3, meta: "Heavy", cue: "Higher foot placement = glute/ham bias." },
+        { id: "f2", name: "Hip Thrusts", sets: 3, meta: "Heavy", cue: "Chin tucked. Posterior pelvic tilt at top." },
+        { id: "f3", name: "Leg Extensions", sets: 3, meta: "Mod", cue: "3-sec eccentric." }
+      ]
+    },
+    6: { // Saturday
+      name: "Fat Loss Sweeper",
+      exs: [
+        { id: "s1", name: "Treadmill/Bike", sets: 1, meta: "60m", cue: "High Effort." },
+        { id: "s2", name: "Deadbugs", sets: 3, meta: "10/side", cue: "Arm goes overhead = bonus serratus activation." },
+        { id: "s3", name: "Deep Sleeper", sets: 5, meta: "30s", cue: "Deep capsular work." }
+      ]
+    }
+  };
+
+  // State Management (Local Storage)
+  let logData = JSON.parse(localStorage.getItem('forgeLog')) || {};
+  let currentDayIndex = new Date().getDay(); // 0 = Sunday, 1 = Monday
+  let timerInterval;
+
+  function init() {
+    renderWeekGrid();
+    loadDay(currentDayIndex);
+  }
+
+  function renderWeekGrid() {
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const grid = document.getElementById('weekGrid');
+    let html = '';
+    
+    days.forEach((day, index) => {
+      const isActive = index === currentDayIndex ? 'active' : '';
+      html += `
+        <div class="day-node ${isActive}" onclick="loadDay(${index})">
+          <div class="day-label">${day}</div>
+          <div class="day-dot"></div>
+        </div>
+      `;
+    });
+    grid.innerHTML = html;
+  }
+
+  function loadDay(index) {
+    pulse('light');
+    currentDayIndex = index;
+    renderWeekGrid(); // Update active highlight
+
+    const workout = PROTOCOL[index];
+    const todayLog = logData[getLogKey(index)] || {};
+
+    let html = `
+      <div class="section-title">DAILY NON-NEGOTIABLE</div>
+    `;
+
+    [span_17](start_span)// Render Daily Mobility[span_17](end_span)
+    PROTOCOL.daily.forEach(ex => {
+      html += generateCardHTML(ex, todayLog);
+    });
+
+    html += `
+      <div class="section-title" style="margin-top: 32px;">${workout.name.toUpperCase()}</div>
+    `;
+
+    [span_18](start_span)[span_19](start_span)[span_20](start_span)[span_21](start_span)[span_22](start_span)[span_23](start_span)[span_24](start_span)// Render Main Workout[span_18](end_span)[span_19](end_span)[span_20](end_span)[span_21](end_span)[span_22](end_span)[span_23](end_span)[span_24](end_span)
+    if (workout.exs.length === 0) {
+      html += `<div class="card"><div class="ex-cue" style="margin:0; border:none; padding:0;">Zero lifting today. Recover, study, Charaiveti.</div></div>`;
+    } else {
+      workout.exs.forEach(ex => {
+        html += generateCardHTML(ex, todayLog);
+      });
+    }
+
+    const container = document.getElementById('mainContent');
+    container.innerHTML = html;
+    
+    // Check if cards should be marked complete on load
+    document.querySelectorAll('.card').forEach(card => checkCardCompletion(card));
+  }
+
+  function generateCardHTML(ex, todayLog) {
+    let setsHtml = '';
+    const completedSets = todayLog[ex.id] || [];
+
+    for (let i = 0; i < ex.sets; i++) {
+      const isFilled = completedSets.includes(i) ? 'filled' : '';
+      setsHtml += `<div class="set-block ${isFilled}" onclick="toggleSet(this, '${ex.id}', ${i}, ${ex.pain || false})">${i + 1}</div>`;
+    }
+
+    return `
+      <div class="card" id="card-${ex.id}">
+        <div class="ex-header">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-load">${ex.meta}</div>
+        </div>
+        <div class="ex-cue">${ex.cue}</div>
+        <div class="set-row">${setsHtml}</div>
+        ${ex.pain ? `
+        <div class="pain-panel">
+          <div class="pain-label">Tendon Status Log</div>
+          <div class="pain-grid">
+            <button class="pain-btn g" onclick="logPain(this)">≤3 OK</button>
+            <button class="pain-btn a" onclick="logPain(this)">4-5 (-20%)</button>
+            <button class="pain-btn r" onclick="logPain(this)">>5 STOP</button>
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  function toggleSet(btn, exId, setIndex, hasPainCheck) {
+    const isDone = btn.classList.contains('filled');
+    const logKey = getLogKey(currentDayIndex);
+    
+    // Initialize log array if empty
+    if (!logData[logKey]) logData[logKey] = {};
+    if (!logData[logKey][exId]) logData[logKey][exId] = [];
+
+    if (isDone) {
+      btn.classList.remove('filled');
+      pulse('light');
+      // Remove from memory
+      logData[logKey][exId] = logData[logKey][exId].filter(i => i !== setIndex);
+      if(hasPainCheck) btn.closest('.card').querySelector('.pain-panel').style.display = 'none';
+    } else {
+      btn.classList.add('filled');
+      pulse('heavy');
+      // Save to memory
+      logData[logKey][exId].push(setIndex);
+      
+      // Auto-start rest timer
+      startRest(60);
+
+      if (hasPainCheck) {
+        btn.closest('.card').querySelector('.pain-panel').style.display = 'block';
+      }
+    }
+
+    localStorage.setItem('forgeLog', JSON.stringify(logData));
+    checkCardCompletion(btn.closest('.card'));
+  }
+
+  function checkCardCompletion(card) {
+    const totalSets = card.querySelectorAll('.set-block').length;
+    const doneSets = card.querySelectorAll('.set-block.filled').length;
+    if (totalSets > 0 && totalSets === doneSets) {
+      card.classList.add('complete');
+    } else {
+      card.classList.remove('complete');
+    }
+  }
+
+  function logPain(btn) {
+    pulse('heavy');
+    btn.closest('.pain-panel').style.display = 'none';
+    // In a full build, this would write the pain severity to localStorage
+  }
+
+  // Timer Logic
+  let timeRemaining = 0;
+  function startRest(seconds) {
+    clearInterval(timerInterval);
+    timeRemaining = seconds;
+    const hud = document.getElementById('timerHud');
+    hud.classList.add('visible');
+    
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timeRemaining--;
+      updateTimerDisplay();
+      if (timeRemaining <= 0) skipRest();
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+    const s = (timeRemaining % 60).toString().padStart(2, '0');
+    document.getElementById('timeDisplay').innerText = `${m}:${s}`;
+  }
+
+  function skipRest() {
+    clearInterval(timerInterval);
+    document.getElementById('timerHud').classList.remove('visible');
+    pulse('light');
+  }
+
+  // Utility to create a unique storage key per day (e.g., "log_2026-03-07")
+  function getLogKey(dayIndex) {
+    const date = new Date();
+    // Simple logic to map the selected day to a date string for saving
+    const currentDay = date.getDay();
+    const diff = dayIndex - currentDay;
+    date.setDate(date.getDate() + diff);
+    return `log_${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  }
+
+  // Initialize
+  init();
+</script>
+</body>
+</html>
