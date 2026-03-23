@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060e17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FORGE">
+<title>FORGE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#060e17;--navy2:#0a1724;--navy3:#0f2032;
+  --sky:#2196F3;--electric:#00cfff;--sky-dim:rgba(33,150,243,0.15);
+  --glass:rgba(255,255,255,0.035);--gb:rgba(255,255,255,0.07);
+  --text:#ddeeff;--dim:#5a7a90;--dimmer:#2a3f50;
+  --green:#00e676;--amber:#ffb300;--red:#ff4444;
+  --upper:#2196F3;--lower:#00bcd4;--recovery:#546e7a;--cardio:#ff6d00;--rest:#2e3f4a;
+  --sfont:'Syne',sans-serif;--bfont:'Manrope',sans-serif;--mfont:'JetBrains Mono',monospace;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--navy);color:var(--text);font-family:var(--bfont);-webkit-font-smoothing:antialiased}
+
+/* ── BACKGROUND ─────────────────────────────── */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-grad{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 40% at 15% 10%,rgba(33,150,243,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 30% at 85% 85%,rgba(0,188,212,0.05) 0%,transparent 60%),
+    linear-gradient(180deg,#060e17 0%,#08121e 100%);
+}
+.bg-dots{
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(33,150,243,0.09) 1px,transparent 1px);
+  background-size:28px 28px;
+  animation:bgdrift 30s linear infinite;
+}
+@keyframes bgdrift{0%{background-position:0 0}100%{background-position:28px 28px}}
+.bg-line{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:1px;height:100%;
+  background:linear-gradient(180deg,transparent,rgba(33,150,243,0.08) 30%,rgba(33,150,243,0.08) 70%,transparent);
+}
+
+/* ── APP SHELL ──────────────────────────────── */
+#app{
+  position:relative;z-index:1;
+  height:100%;display:flex;flex-direction:column;
+  max-width:480px;margin:0 auto;
+  padding-top:calc(var(--sat) + 8px);
+  padding-bottom:calc(var(--sab) + 64px);
+}
+
+/* ── HEADER ─────────────────────────────────── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px 10px;flex-shrink:0;
+}
+.logo{
+  font-family:var(--sfont);font-weight:800;font-size:22px;
+  letter-spacing:6px;
+  background:linear-gradient(120deg,var(--electric) 0%,var(--sky) 50%,rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  position:relative;
+  animation:logopulse 4s ease-in-out infinite;
+}
+@keyframes logopulse{0%,100%{filter:brightness(1) drop-shadow(0 0 8px rgba(0,207,255,0))}50%{filter:brightness(1.2) drop-shadow(0 0 12px rgba(0,207,255,0.4))}}
+.logo::after{
+  content:'BARAMATI PROTOCOL';
+  display:block;
+  font-family:var(--mfont);font-size:7px;font-weight:500;
+  letter-spacing:3px;color:var(--dim);-webkit-text-fill-color:var(--dim);
+  margin-top:-2px;
+}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.streak-chip{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(255,179,0,0.1);border:1px solid rgba(255,179,0,0.22);
+  border-radius:20px;padding:5px 11px;
+  font-family:var(--mfont);font-size:12px;font-weight:700;color:#ffb300;
+}
+.pain-chip{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:20px;padding:5px 11px;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;
+  color:var(--dim);cursor:pointer;transition:all 0.2s;
+}
+.pain-chip:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.pain-chip.pg{border-color:rgba(0,230,118,0.3);color:var(--green)}
+.pain-chip.pa{border-color:rgba(255,179,0,0.3);color:var(--amber)}
+.pain-chip.pr{border-color:rgba(255,68,68,0.3);color:var(--red)}
+
+/* ── DAY CAROUSEL ───────────────────────────── */
+.carousel{
+  display:flex;gap:5px;padding:0 14px 12px;
+  overflow-x:auto;scrollbar-width:none;flex-shrink:0;
+}
+.carousel::-webkit-scrollbar{display:none}
+.dpill{
+  flex-shrink:0;width:40px;height:54px;
+  border-radius:11px;border:1px solid var(--gb);
+  background:var(--glass);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.dpill::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--dc,var(--sky));
+  transform:scaleX(0);transition:transform 0.3s ease;border-radius:0 0 2px 2px;
+}
+.dpill.active{
+  background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.13);
+  transform:translateY(-3px);
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);
+}
+.dpill.active::after{transform:scaleX(1)}
+.dpill.today-mark::before{
+  content:'';position:absolute;top:5px;right:5px;
+  width:5px;height:5px;border-radius:50%;background:var(--electric);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.dlabel{
+  font-family:var(--sfont);font-size:12px;font-weight:700;
+  color:var(--dim);letter-spacing:0.5px;transition:color 0.2s;
+}
+.dpill.active .dlabel{color:var(--text)}
+.dpill.done-day .dlabel{color:var(--green)}
+.dcheck{font-size:7px;color:var(--green);opacity:0;transition:opacity 0.3s;height:8px}
+.dpill.done-day .dcheck{opacity:1}
+
+/* ── MAIN SCROLL ────────────────────────────── */
+#content{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:0 14px 8px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+#content::-webkit-scrollbar{display:none}
+
+/* ── DAY HERO ───────────────────────────────── */
+.day-hero{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:20px;padding:18px;margin-bottom:10px;
+  display:flex;align-items:center;gap:16px;
+  position:relative;overflow:hidden;
+  animation:fin 0.4s ease both;
+}
+.day-hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1.5px;
+  background:linear-gradient(90deg,var(--dc,var(--sky)),transparent 70%);
+}
+.day-hero::after{
+  content:'';position:absolute;top:-30px;right:-20px;
+  width:100px;height:100px;border-radius:50%;
+  background:radial-gradient(circle,var(--dc,var(--sky)) 0%,transparent 70%);
+  opacity:0.06;
+}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Progress ring */
+.ring-wrap{position:relative;width:62px;height:62px;flex-shrink:0}
+.ring-svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,0.07);stroke-width:4}
+.ring-fill{
+  fill:none;stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:163;stroke-dashoffset:163;
+  transition:stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+.ring-txt{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mfont);font-size:12px;font-weight:700;color:var(--text);
+}
+.day-meta{flex:1;min-width:0}
+.day-bigname{
+  font-family:var(--sfont);font-size:21px;font-weight:800;
+  letter-spacing:2px;color:var(--text);line-height:1;
+}
+.day-subname{
+  font-family:var(--mfont);font-size:10px;font-weight:600;
+  color:var(--dc,var(--sky));letter-spacing:3px;margin-top:4px;
+}
+.day-count{font-size:11px;color:var(--dim);margin-top:6px}
+.day-count b{font-family:var(--mfont);color:var(--text);font-weight:600}
+
+/* ── QUOTE ──────────────────────────────────── */
+.quote{
+  background:linear-gradient(135deg,rgba(33,150,243,0.07),rgba(0,207,255,0.03));
+  border:1px solid rgba(33,150,243,0.18);
+  border-radius:16px;padding:14px 16px;margin-bottom:10px;
+  animation:fin 0.4s 0.08s ease both;
+}
+.quote-main{
+  font-family:var(--sfont);font-size:17px;font-weight:700;
+  color:var(--electric);letter-spacing:0.3px;
+}
+.quote-sub{font-size:11.5px;color:var(--dim);margin-top:3px;font-style:italic}
+
+/* ── MOBILITY CARD ──────────────────────────── */
+.mob-card{
+  background:rgba(0,230,118,0.04);border:1px solid rgba(0,230,118,0.13);
+  border-radius:15px;padding:12px 14px;margin-bottom:12px;
+  cursor:pointer;transition:background 0.2s;
+  animation:fin 0.4s 0.12s ease both;
+}
+.mob-card:hover{background:rgba(0,230,118,0.07)}
+.mob-head{display:flex;align-items:center;justify-content:space-between}
+.mob-title{
+  font-family:var(--mfont);font-size:9px;font-weight:700;
+  letter-spacing:3px;color:var(--green);
+}
+.mob-chev{font-size:10px;color:var(--green);transition:transform 0.3s}
+.mob-card.open .mob-chev{transform:rotate(180deg)}
+.mob-items{display:none;margin-top:10px;flex-direction:column;gap:5px}
+.mob-card.open .mob-items{display:flex}
+.mob-row{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:9px;
+}
+.mob-name{flex:1;font-size:12.5px;font-weight:500}
+.mob-data{font-family:var(--mfont);font-size:10px;color:var(--dim)}
+.mob-cue{font-size:11px;color:var(--dim);font-style:italic;padding:6px 10px 0;line-height:1.5}
+
+/* ── SECTION ────────────────────────────────── */
+.sec-lbl{
+  font-family:var(--mfont);font-size:8.5px;font-weight:700;
+  letter-spacing:4px;color:var(--dimmer);
+  padding:10px 2px 6px;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--gb)}
+
+/* ── EXERCISE CARD ──────────────────────────── */
+.ex{
+  background:var(--glass);border:1px solid var(--gb);
+  border-radius:13px;margin-bottom:5px;overflow:hidden;
+  transition:border-color 0.3s,background 0.3s;
+  position:relative;
+}
+.ex.checked{
+  background:rgba(0,230,118,0.03);
+  border-color:rgba(0,230,118,0.15);
+}
+.ex.checked .exname{text-decoration:line-through;color:var(--dim);opacity:0.55}
+.ex-main{display:flex;align-items:center;padding:11px 12px;gap:11px;cursor:pointer}
+
+/* Checkbox */
+.cb{
+  width:21px;height:21px;border-radius:50%;border:1.5px solid var(--gb);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);cursor:pointer;
+}
+.cb:hover{border-color:var(--green);transform:scale(1.12)}
+.ex.checked .cb{background:var(--green);border-color:var(--green)}
+.cb-tick{font-size:10px;color:white;display:none;animation:popin 0.35s cubic-bezier(0.34,1.56,0.64,1) both}
+.ex.checked .cb-tick{display:block}
+.cb-dot{width:7px;height:7px;border-radius:50%}
+.ex.checked .cb-dot{display:none}
+@keyframes popin{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+
+.exinfo{flex:1;min-width:0}
+.exname{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.3;transition:all 0.3s}
+.exbadges{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}
+.badge{
+  font-family:var(--mfont);font-size:9.5px;font-weight:500;
+  color:var(--dim);background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:4px;padding:1px 6px;
+  transition:all 0.2s;
+}
+.ex.editing .badge{
+  border-color:rgba(33,150,243,0.4);background:rgba(33,150,243,0.07);
+  color:var(--text);outline:none;
+}
+.ex.editing .exname{
+  outline:none;border-bottom:1px solid var(--sky);
+}
+
+.ex-acts{display:flex;gap:2px;align-items:center}
+.act-btn{
+  width:27px;height:27px;border-radius:7px;border:none;
+  background:transparent;color:var(--dimmer);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;transition:all 0.2s;
+}
+.act-btn:hover{background:rgba(255,255,255,0.06);color:var(--sky)}
+.exp-btn{transition:transform 0.3s, color 0.2s}
+.ex.open .exp-btn{transform:rotate(180deg);color:var(--sky)}
+
+/* Cue panel */
+.cue-panel{
+  max-height:0;overflow:hidden;
+  transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1),padding 0.35s;
+  padding:0 13px;background:rgba(0,0,0,0.12);
+}
+.ex.open .cue-panel{max-height:80px;padding:9px 13px 12px}
+.cue-txt{
+  font-size:12px;color:var(--dim);line-height:1.6;font-style:italic;
+  border-left:2px solid var(--dc,var(--sky));padding-left:10px;
+  outline:none;
+}
+.ex.editing .cue-txt{
+  border-left-color:var(--sky);
+  color:var(--text);
+}
+
+/* ── WEEK VIEW ──────────────────────────────── */
+#week-view{display:none;padding:2px 0 12px;animation:fin 0.3s ease both}
+#week-view.show{display:block}
+.wcard{
+  background:var(--glass);border:1px solid var(--gb);
+  border-left:2px solid var(--dc,var(--sky));
+  border-radius:14px;padding:14px 16px;margin-bottom:7px;
+  cursor:pointer;transition:all 0.2s;
+}
+.wcard:hover{transform:translateX(5px);background:rgba(255,255,255,0.05)}
+.wcard-top{display:flex;align-items:flex-start;justify-content:space-between}
+.wcard-name{font-family:var(--sfont);font-size:15px;font-weight:700;letter-spacing:1px}
+.wcard-type{font-family:var(--mfont);font-size:9px;font-weight:600;letter-spacing:3px;margin-top:3px}
+.wcard-pct{font-family:var(--mfont);font-size:11px;color:var(--dim)}
+.wcard-exs{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.5}
+.today-tag{
+  font-family:var(--mfont);font-size:8px;font-weight:700;letter-spacing:2px;
+  background:rgba(0,207,255,0.12);border:1px solid rgba(0,207,255,0.25);
+  color:var(--electric);border-radius:4px;padding:2px 6px;margin-left:8px;
+  vertical-align:middle;
+}
+
+/* ── PAIN MODAL ─────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.overlay.on{opacity:1;pointer-events:all}
+.modal{
+  background:var(--navy3);border:1px solid var(--gb);
+  border-radius:26px 26px 0 0;
+  width:100%;max-width:480px;
+  padding:18px 18px calc(16px + var(--sab));
+  transform:translateY(100%);
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.overlay.on .modal{transform:translateY(0)}
+.modal-handle{width:38px;height:4px;background:var(--gb);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-family:var(--sfont);font-size:18px;font-weight:700;margin-bottom:4px;letter-spacing:1px}
+.modal-sub{font-size:12px;color:var(--dim);margin-bottom:18px}
+.pain-opts{display:flex;flex-direction:column;gap:8px}
+.popt{
+  display:flex;align-items:center;gap:13px;
+  padding:13px 15px;border-radius:13px;
+  border:1px solid var(--gb);background:var(--glass);
+  cursor:pointer;transition:all 0.2s;
+}
+.popt:hover{transform:translateX(4px)}
+.popt.g{border-color:rgba(0,230,118,0.25)}
+.popt.g:hover{background:rgba(0,230,118,0.07)}
+.popt.a{border-color:rgba(255,179,0,0.25)}
+.popt.a:hover{background:rgba(255,179,0,0.07)}
+.popt.r{border-color:rgba(255,68,68,0.25)}
+.popt.r:hover{background:rgba(255,68,68,0.07)}
+.pdot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.plabel{font-family:var(--mfont);font-size:11px;font-weight:700;letter-spacing:1.5px}
+.pdesc{font-size:11.5px;color:var(--dim);margin-top:2px}
+
+/* ── SETTINGS ───────────────────────────────── */
+#settings-view{display:none;padding:2px 0 12px;animation:fin 0.3s ease both}
+#settings-view.show{display:block}
+.stitle{
+  font-family:var(--mfont);font-size:9px;font-weight:700;
+  letter-spacing:4px;color:var(--dimmer);padding:12px 2px 8px;
+}
+.scard{background:var(--glass);border:1px solid var(--gb);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.srow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 15px;border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:13.5px;font-weight:500;
+}
+.srow:last-child{border-bottom:none}
+.sval{font-family:var(--mfont);font-size:11px;color:var(--sky)}
+.dbtn{
+  width:100%;padding:14px;
+  background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.18);
+  border-radius:13px;color:var(--red);
+  font-family:var(--bfont);font-size:13.5px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+}
+.dbtn:hover{background:rgba(255,68,68,0.13)}
+
+/* ── BOTTOM NAV ──────────────────────────────── */
+.bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:rgba(6,14,23,0.92);backdrop-filter:blur(20px);
+  border-top:1px solid var(--gb);
+  display:flex;padding:6px 0 calc(6px + var(--sab));z-index:50;
+}
+.nbtn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 4px;border:none;background:transparent;
+  cursor:pointer;color:var(--dimmer);transition:all 0.2s;
+}
+.nbtn.on{color:var(--electric)}
+.nicon{font-size:19px;line-height:1}
+.nlbl{font-size:8.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+
+/* ── TOAST ──────────────────────────────────── */
+.toast{
+  position:fixed;top:calc(var(--sat) + 64px);
+  left:50%;transform:translateX(-50%) translateY(-16px);
+  background:rgba(0,230,118,0.12);border:1px solid rgba(0,230,118,0.28);
+  border-radius:20px;padding:9px 18px;
+  font-size:12.5px;font-weight:600;color:var(--green);
+  white-space:nowrap;z-index:200;pointer-events:none;
+  opacity:0;transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.warn{background:rgba(255,179,0,0.12);border-color:rgba(255,179,0,0.28);color:var(--amber)}
+.toast.err{background:rgba(255,68,68,0.12);border-color:rgba(255,68,68,0.28);color:var(--red)}
+
+/* ── ANIMATIONS ─────────────────────────────── */
+.reveal{animation:fin 0.4s ease both}
+.reveal:nth-child(1){animation-delay:0.05s}
+.reveal:nth-child(2){animation-delay:0.1s}
+.reveal:nth-child(3){animation-delay:0.15s}
+.reveal:nth-child(4){animation-delay:0.2s}
+.reveal:nth-child(5){animation-delay:0.25s}
+.reveal:nth-child(6){animation-delay:0.3s}
+.reveal:nth-child(7){animation-delay:0.35s}
+.reveal:nth-child(8){animation-delay:0.4s}
+*{scrollbar-width:none}*::-webkit-scrollbar{display:none}
+[contenteditable]:focus{outline:none}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="bg-grad"></div>
+  <div class="bg-dots"></div>
+  <div class="bg-line"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="app">
+  <header>
+    <div class="logo">FORGE</div>
+    <div class="hdr-right">
+      <div class="streak-chip">🔥 <span id="streak-n">0</span></div>
+      <div class="pain-chip" id="pain-chip" onclick="openPain()">PAIN</div>
+    </div>
+  </header>
+
+  <div class="carousel" id="carousel"></div>
+
+  <div id="content">
+    <div id="day-view"></div>
+    <div id="week-view"></div>
+    <div id="settings-view"></div>
+  </div>
+</div>
+
+<nav class="bnav">
+  <button class="nbtn on" id="nb-today" onclick="goView('today')">
+    <span class="nicon">⚡</span><span class="nlbl">Today</span>
+  </button>
+  <button class="nbtn" id="nb-week" onclick="goView('week')">
+    <span class="nicon">📅</span><span class="nlbl">Week</span>
+  </button>
+  <button class="nbtn" id="nb-pain" onclick="openPain()">
+    <span class="nicon">🎯</span><span class="nlbl">Pain</span>
+  </button>
+  <button class="nbtn" id="nb-settings" onclick="goView('settings')">
+    <span class="nicon">⚙</span><span class="nlbl">More</span>
+  </button>
+</nav>
+
+<!-- Pain Modal -->
+<div class="overlay" id="pain-overlay" onclick="closePainOuter(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Pain Check</div>
+    <div class="modal-sub">Right shoulder — how is it right now?</div>
+    <div class="pain-opts">
+      <button class="popt g" onclick="logPain('g')">
+        <div class="pdot" style="background:var(--green)"></div>
+        <div><div class="plabel" style="color:var(--green)">GREEN — TRAIN</div>
+        <div class="pdesc">Pain ≤3/10. No spike in last 24h. Continue as programmed.</div></div>
+      </button>
+      <button class="popt a" onclick="logPain('a')">
+        <div class="pdot" style="background:var(--amber)"></div>
+        <div><div class="plabel" style="color:var(--amber)">AMBER — REDUCE 20%</div>
+        <div class="pdesc">Pain 4–5/10 or mild morning ache. Keep moving, lighter load.</div></div>
+      </button>
+      <button class="popt r" onclick="logPain('r')">
+        <div class="pdot" style="background:var(--red)"></div>
+        <div><div class="plabel" style="color:var(--red)">RED — STOP</div>
+        <div class="pdesc">Pain >5/10, night pain, sharp catching, arm weakness. See doctor.</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+const DAYS=['M','T','W','T','F','S','S'];
+const DAYNAMES=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+const DAYCOLORS={upper:'#2196F3',lower:'#00bcd4',recovery:'#546e7a',cardio:'#ff6d00',rest:'#2e3f4a'};
+
+const QUOTES=[
+  {t:'Charaiveti.',s:'The sting is data, not destiny.'},
+  {t:'Sub-5000.',s:'Build the body that gets there.'},
+  {t:'8–12 weeks.',s:'The tendon knows the plan. Stay consistent.'},
+  {t:'Neutral grip. Every time.',s:'One rule. Follow it. Let it heal.'},
+  {t:'Every rep is tendon remodelling.',s:'Every stretch releases the capsule.'},
+  {t:'Forge the body. Feed the mind.',s:'Both. Every single day.'},
+  {t:'The protocol works if you do.',s:'No shortcuts. No exceptions.'},
+];
+
+const MOB=[
+  {id:'dm1',n:'Sleeper Stretch',s:'3',r:'30 sec',c:'RIGHT side. Left hand pushes forearm DOWN toward floor. Scapula FLAT the entire time.'},
+  {id:'dm2',n:'Pec Minor Stretch (Hip-height)',s:'3',r:'30 sec',c:'Forearm at HIP height on doorframe — NOT shoulder height. Lean body forward gently.'},
+];
+
+const W={
+  0:{n:'UPPER A',t:'upper',sec:[
+    {l:'WARM-UP',ex:[
+      {id:'m1',n:'Dead Hangs',s:'2',r:'30 sec',ld:'BW',c:'Fully relax traps. Decompress first.'},
+      {id:'m2',n:'Face Pulls (upper pulley)',s:'3',r:'20',ld:'Light',c:'Elbows high, pull to nose. Any handle on upper pulley.'},
+      {id:'m3',n:'Wall Slides',s:'3',r:'12',ld:'BW',c:'Forearms on wall. Protract fully at top. Push wall AWAY.'},
+    ]},
+    {l:'THERAPEUTIC',ex:[
+      {id:'m4',n:'Y-Raises (incline bench, face-down)',s:'3',r:'12',ld:'1–2 kg',c:'Thumbs UP. Squeeze blades DOWN then back. Never shrug.'},
+    ]},
+    {l:'CHEST',ex:[
+      {id:'m5',n:'Incline DB Press (neutral grip)',s:'3',r:'12',ld:'Moderate',c:'Hold DBs VERTICAL — palms face each other. Elbows 45°. No wrist flare. Progressive overload.'},
+      {id:'m6',n:'Chest Machine (3-sec eccentric)',s:'3',r:'15',ld:'Light-Mod',c:'Adjust seat so elbows track naturally. Squeeze hard at contraction. SLOW 3-sec down.'},
+    ]},
+    {l:'BACK',ex:[
+      {id:'m7',n:'V-Bar Lat Pulldown (neutral hack)',s:'3',r:'12',ld:'Moderate',c:'Attach V-bar to top of lat pulldown. Pull to upper chest. Retract scapula FIRST.'},
+      {id:'m8',n:'Chest-Supported Row',s:'3',r:'12',ld:'Moderate',c:'Retract blade FIRST, then pull arm. Control the return fully.'},
+    ]},
+    {l:'ARMS',ex:[
+      {id:'m9',n:'Hammer Curls',s:'3',r:'12',ld:'Moderate',c:'Neutral grip. Brace elbow against body. Zero swinging. Progressive overload.'},
+      {id:'m10',n:'Triceps Pushdowns (pulley)',s:'3',r:'15',ld:'Light-Mod',c:'Elbows PINNED to ribs throughout. Full extension at bottom.'},
+    ]},
+    {l:'CARDIO',ex:[
+      {id:'m11',n:'Incline Treadmill — Zone 2',s:'1',r:'40 min',ld:'Low-Mod',c:'Zone 2 = can hold a full sentence. Review Anki.'},
+    ]},
+  ]},
+  1:{n:'LOWER A',t:'lower',sec:[
+    {l:'WARM-UP',ex:[
+      {id:'t1',n:'Dynamic Lower Body',s:'1',r:'5 min',ld:'BW',c:'Hip circles, leg swings, bodyweight squats. Get the hips warm.'},
+    ]},
+    {l:'MAIN WORK',ex:[
+      {id:'t2',n:'Leg Press (neutral width)',s:'3',r:'12',ld:'Moderate',c:'Full range of motion. Controlled descent. Progressive overload.'},
+      {id:'t3',n:'Leg Extensions (3-sec eccentric)',s:'3',r:'15',ld:'Light-Mod',c:'DO NOT drop the weight. Slow controlled down phase.'},
+      {id:'t4',n:'Leg Curls',s:'3',r:'15',ld:'Light-Mod',c:'Control the negative. No jerking at start of rep.'},
+      {id:'t5',n:'Sumo Leg Press (adductor sub)',s:'3',r:'15',ld:'Light-Mod',c:'No adductor machine → WIDE feet turned out. Inner thigh bias. Slow eccentric.'},
+      {id:'t6',n:'Standing Side Leg Raises (abductor sub)',s:'3',r:'15 each',ld:'BW/Light',c:'No abductor machine → stand sideways, raise leg out to side. Control the down phase.'},
+      {id:'t7',n:'Leg Press Calf Raises (calf sub)',s:'3',r:'20',ld:'Moderate',c:'No calf machine → feet LOW on plate, ball of foot only. Full heel stretch at bottom.'},
+    ]},
+  ]},
+  2:{n:'RECOVERY',t:'recovery',sec:[
+    {l:'ACTIVE RECOVERY',ex:[
+      {id:'w1',n:'Wall Slides (motor pattern only)',s:'2',r:'10',ld:'BW',c:'NOT a workout. Just keeping the neural pattern fresh. Not a loaded set.'},
+      {id:'w2',n:'Brisk Walk / Elliptical',s:'1',r:'45–60 min',ld:'Low-Mod',c:'Zone 2. Listen to lectures or Anki audio. Recover actively.'},
+      {id:'w3',n:'Sleeper Stretch (optional)',s:'2',r:'30 sec',ld:'Passive',c:'If posterior shoulder feels tight. More time today = deeper capsular release.'},
+    ]},
+  ]},
+  3:{n:'UPPER B',t:'upper',sec:[
+    {l:'WARM-UP — 12 MIN',ex:[
+      {id:'h1',n:'Rear Delt Flyes (blood flow)',s:'2',r:'20',ld:'Very Light',c:'NOT working sets. Just flooding rear delts. Set up blood flow before loading.'},
+      {id:'h2',n:'Wall Slides',s:'3',r:'12',ld:'BW',c:'Protract fully at top. Push wall AWAY aggressively.'},
+      {id:'h3',n:'Face Pulls (activation)',s:'2',r:'15',ld:'Light',c:'Elbows high. Pull to nose. Activation only — not loaded.'},
+    ]},
+    {l:'THERAPEUTIC',ex:[
+      {id:'h4',n:'Y-Raises (incline bench)',s:'3',r:'12',ld:'1–2 kg',c:'DOWN then up. Lower trap activation. NEVER shrug the shoulder up.'},
+      {id:'h5',n:'Side-Lying DB External Rotation ⚠️',s:'3',r:'15',ld:'2–3 kg MAX',c:'⚠️ Towel under elbow. 3-sec eccentric DOWN. Do NOT go heavier. Therapeutic only.'},
+    ]},
+    {l:'SHOULDERS',ex:[
+      {id:'h6',n:'Seated DB Press (neutral grip) ⚠️',s:'3',r:'12',ld:'Moderate',c:'⚠️ PAIN RULE: ≤3/10 during. No spike next morning. If yes → reduce 20% next session.'},
+      {id:'h7',n:'DB Scaption (thumbs UP strictly)',s:'3',r:'15',ld:'Light',c:'30° forward from sides (scapular plane). Slow eccentric. Thumbs UP = prevents impingement.'},
+    ]},
+    {l:'REAR DELTS',ex:[
+      {id:'h8',n:'Bent-Over Rear Delt Flyes',s:'4',r:'20',ld:'Moderate',c:'Chest on incline bench for support. Elbows slightly bent. Control the return — zero momentum.'},
+    ]},
+    {l:'ARMS',ex:[
+      {id:'h9',n:'Seated Incline DB Curl',s:'3',r:'12',ld:'Moderate',c:'Arms hang straight from incline. Mimics preacher stretch. No body swing. Progressive overload.'},
+      {id:'h10',n:'DB Skullcrushers',s:'3',r:'12',ld:'Light-Mod',c:'Elbows track FORWARD, not flaring. Slow descent. Flat bench.'},
+    ]},
+    {l:'CARDIO',ex:[
+      {id:'h11',n:'Incline Treadmill — Zone 2',s:'1',r:'40 min',ld:'Low-Mod',c:'Zone 2 pace. Review Anki.'},
+    ]},
+  ]},
+  4:{n:'LOWER B',t:'lower',sec:[
+    {l:'MAIN WORK',ex:[
+      {id:'f1',n:'Leg Press (feet HIGH on platform)',s:'3',r:'12',ld:'Moderate-Heavy',c:'Higher foot placement = glute and hamstring bias. Control the descent. Progressive overload.'},
+      {id:'f2',n:'Smith Rack Hip Thrusts',s:'3',r:'12',ld:'Heavy',c:'Pad bar with towel. Chin tucked. Posterior pelvic tilt at TOP. Drive through heels. Progressive overload.'},
+      {id:'f3',n:'Leg Extensions (3-sec eccentric)',s:'3',r:'15',ld:'Light-Mod',c:'Slow controlled down phase. Do not drop.'},
+      {id:'f4',n:'Leg Curls',s:'3',r:'15',ld:'Light-Mod',c:'Control the negative throughout.'},
+    ]},
+  ]},
+  5:{n:'SWEEPER',t:'cardio',sec:[
+    {l:'FAT LOSS CARDIO',ex:[
+      {id:'s1',n:'Treadmill / Elliptical / Bike',s:'1',r:'45–60 min',ld:'High Effort',c:'Compensate for cardio skipped on leg days. Make this session count.'},
+    ]},
+    {l:'CORE',ex:[
+      {id:'s2',n:'Deadbugs',s:'3',r:'10 each side',ld:'BW',c:'Lower back FLAT on floor the entire time. Arm going overhead = bonus serratus activation.'},
+      {id:'s3',n:'Forearm Plank',s:'3',r:'30–45 sec',ld:'BW',c:'Forearms ONLY — zero shoulder load. Straight line from head to heels.'},
+      {id:'s4',n:'Cable Crunches (lower pulley)',s:'3',r:'15',ld:'Light',c:'Kneel at lower pulley, pull handle to forehead. Core loaded safely without shoulder involvement.'},
+    ]},
+    {l:'SHOULDER THERAPY',ex:[
+      {id:'s5',n:'Deep Sleeper Stretch',s:'5',r:'30 sec',ld:'Passive',c:'Saturday = deep capsular work day. No gym pressure. Best posterior capsule session of the week.'},
+    ]},
+  ]},
+  6:{n:'REST',t:'rest',sec:[
+    {l:'TOTAL REST',ex:[
+      {id:'su1',n:'Morning Mobility Only (5 min)',s:'1',r:'5 min',ld:'—',c:'Sleeper stretch + pec minor stretch. That is it. Deep sleep = tendon repair window. Recover fully.'},
+    ]},
+  ]},
+};
+
+// ── STATE ────────────────────────────────────────────────────
+const S={
+  day: Math.max(0,(new Date().getDay()+6)%7),
+  view:'today',
+  done:{},
+  streak:0,
+  lastDate:'',
+  painLog:[],
+  edits:{},
+};
+function load(){try{const d=localStorage.getItem('forge_v2');if(d)Object.assign(S,JSON.parse(d))}catch(e){}}
+function save(){try{localStorage.setItem('forge_v2',JSON.stringify(S))}catch(e){}}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function dc(d){return DAYCOLORS[W[d].t]}
+function total(d){return W[d].sec.reduce((a,s)=>a+s.ex.length,0)}
+function doneCount(d){return W[d].sec.reduce((a,s)=>a+s.ex.filter(e=>S.done[d+'_'+e.id]).length,0)}
+function ex(d,e){return{...e,...(S.edits[d+'_'+e.id]||{})}}
+function pct(d){const t=total(d);return t>0?doneCount(d)/t:0}
+
+// ── RENDER DAY ───────────────────────────────────────────────
+function renderDay(d){
+  const day=W[d],color=dc(d),t=total(d),dn=doneCount(d);
+  const p=pct(d),off=163-(p*163),q=QUOTES[d%QUOTES.length];
+  document.documentElement.style.setProperty('--dc',color);
+
+  let h=`
+  <div class="day-hero" style="--dc:${color}">
+    <div class="ring-wrap">
+      <svg class="ring-svg" width="62" height="62" viewBox="0 0 62 62">
+        <circle class="ring-track" cx="31" cy="31" r="26"/>
+        <circle class="ring-fill" cx="31" cy="31" r="26"
+          style="stroke:${color};stroke-dashoffset:${off.toFixed(1)}" id="rfl"/>
+      </svg>
+      <div class="ring-txt">${Math.round(p*100)}%</div>
+    </div>
+    <div class="day-meta">
+      <div class="day-bigname">${DAYNAMES[d]}</div>
+      <div class="day-subname" style="color:${color}">${day.n}</div>
+      <div class="day-count"><b>${dn}</b> / ${t} done</div>
+    </div>
+  </div>
+
+  <div class="quote">
+    <div class="quote-main">${q.t}</div>
+    <div class="quote-sub">${q.s}</div>
+  </div>
+
+  <div class="mob-card" id="mcrd" onclick="toggleMob()">
+    <div class="mob-head">
+      <div class="mob-title">⚡ Daily Morning Mobility — Every Day</div>
+      <div class="mob-chev" id="mchev">▼</div>
+    </div>
+    <div class="mob-items" id="mitems">
+      ${MOB.map(m=>`
+        <div class="mob-row">
+          <div class="mob-name">${m.n}</div>
+          <div class="mob-data">${m.s} × ${m.r}</div>
+        </div>
+        <div class="mob-cue">${m.c}</div>
+      `).join('')}
+    </div>
+  </div>`;
+
+  day.sec.forEach((sec,si)=>{
+    h+=`<div class="sec-lbl">${sec.l}</div>`;
+    sec.ex.forEach((rawE,ei)=>{
+      const e=ex(d,rawE),k=d+'_'+e.id,ck=S.done[k];
+      const delay=(si*0.05+ei*0.04).toFixed(2);
+      h+=`
+      <div class="ex reveal ${ck?'checked':''}" id="xc_${e.id}" style="animation-delay:${delay}s">
+        <div class="ex-main">
+          <div class="cb" onclick="tog(event,${d},'${e.id}')">
+            <span class="cb-tick">✓</span>
+            <span class="cb-dot"></span>
+          </div>
+          <div class="exinfo">
+            <div class="exname" id="xn_${e.id}" data-d="${d}" data-id="${e.id}" contenteditable="false">${e.n}</div>
+            <div class="exbadges">
+              <span class="badge" id="xs_${e.id}" data-d="${d}" data-id="${e.id}" data-f="s" contenteditable="false">${e.s} sets</span>
+              <span class="badge" id="xr_${e.id}" data-d="${d}" data-id="${e.id}" data-f="r" contenteditable="false">${e.r}</span>
+              <span class="badge" id="xl_${e.id}" data-d="${d}" data-id="${e.id}" data-f="ld" contenteditable="false">${e.ld}</span>
+            </div>
+          </div>
+          <div class="ex-acts">
+            <button class="act-btn" onclick="editToggle(event,'${e.id}',${d})" title="Edit">✎</button>
+            <button class="act-btn exp-btn" onclick="expandToggle(event,'${e.id}')">▾</button>
+          </div>
+        </div>
+        <div class="cue-panel">
+          <div class="cue-txt" id="xc2_${e.id}" data-d="${d}" data-id="${e.id}" contenteditable="false">${e.c}</div>
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('day-view').innerHTML=h;
+}
+
+function renderWeek(){
+  const today=(new Date().getDay()+6)%7;
+  let h='<div style="padding-top:2px">';
+  for(let i=0;i<7;i++){
+    const color=dc(i),t=total(i),dn=doneCount(i),p=t>0?Math.round(dn/t*100):0;
+    const exPrev=W[i].sec.flatMap(s=>s.ex.map(e=>e.n)).slice(0,3).join(' · ');
+    h+=`<div class="wcard reveal" style="--dc:${color};animation-delay:${i*0.05}s" onclick="selectDay(${i})">
+      <div class="wcard-top">
+        <div>
+          <div class="wcard-name">${DAYNAMES[i]}${i===today?'<span class="today-tag">TODAY</span>':''}</div>
+          <div class="wcard-type" style="color:${color}">${W[i].n}</div>
+        </div>
+        <div class="wcard-pct">${dn}/${t} · ${p}%</div>
+      </div>
+      <div class="wcard-exs">${exPrev}${t>3?` +${t-3} more`:''}</div>
+    </div>`;
+  }
+  h+='</div>';
+  document.getElementById('week-view').innerHTML=h;
+}
+
+function renderSettings(){
+  const total_done=Object.values(S.done).filter(Boolean).length;
+  const last=S.painLog.length?S.painLog[S.painLog.length-1]:'—';
+  const painMap={g:'GREEN ✓',a:'AMBER !',r:'RED ✗'};
+  document.getElementById('settings-view').innerHTML=`
+  <div class="stitle">── STATS ──</div>
+  <div class="scard">
+    <div class="srow"><span>Total exercises completed</span><span class="sval">${total_done}</span></div>
+    <div class="srow"><span>Current streak</span><span class="sval">🔥 ${S.streak} days</span></div>
+    <div class="srow"><span>Last pain check</span><span class="sval">${last==='—'?'—':painMap[last.l]||'—'}</span></div>
+  </div>
+  <div class="stitle">── SHOULDER NOTES ──</div>
+  <div class="scard">
+    <div class="srow"><span>MRI finding</span><span class="sval">Buford Complex (variant)</span></div>
+    <div class="srow"><span>Tendon status</span><span class="sval">Grade I tendinosis</span></div>
+    <div class="srow"><span>Acromion</span><span class="sval">Type II (hook)</span></div>
+    <div class="srow"><span>Recovery window</span><span class="sval">8–12 weeks</span></div>
+    <div class="srow"><span>Sleep position</span><span class="sval" style="color:var(--red)">LEFT / BACK ONLY</span></div>
+    <div class="srow"><span>External rotation pain</span><span class="sval" style="color:var(--amber)">Expected — healing phase</span></div>
+  </div>
+  <div class="stitle">── DAILY RULE ──</div>
+  <div class="scard">
+    <div class="srow"><span>Tendon Care Forte</span><span class="sval">Mon + Thu, 45–60 min before</span></div>
+    <div class="srow"><span>With Vitamin C</span><span class="sval">Yes, same time</span></div>
+    <div class="srow"><span>Pain limit to train</span><span class="sval">≤3/10 during set</span></div>
+  </div>
+  <div class="stitle">── DATA ──</div>
+  <button class="dbtn" onclick="resetAll()">Reset All Progress</button>`;
+}
+
+function renderCarousel(){
+  const today=(new Date().getDay()+6)%7;
+  document.getElementById('carousel').innerHTML=DAYS.map((d,i)=>{
+    const color=dc(i),dn=doneCount(i),t=total(i);
+    const isDone=t>0&&dn===t;
+    return `<div class="dpill${i===S.day?' active':''}${isDone?' done-day':''}${i===today?' today-mark':''}"
+      style="--dc:${color}" onclick="selectDay(${i})">
+      <span class="dlabel">${d}</span>
+      <span class="dcheck">✓</span>
+    </div>`;
+  }).join('');
+}
+
+// ── INTERACTIONS ─────────────────────────────────────────────
+function selectDay(d){
+  S.day=d;save();
+  renderCarousel();
+  if(S.view==='today'){renderDay(d)}
+  else if(S.view==='week'){goView('today')}
+  document.getElementById('content').scrollTop=0;
+}
+
+function goView(v){
+  S.view=v;save();
+  document.getElementById('day-view').style.display='none';
+  document.getElementById('week-view').classList.remove('show');
+  document.getElementById('settings-view').classList.remove('show');
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('on'));
+
+  if(v==='today'){
+    document.getElementById('day-view').style.display='block';
+    document.getElementById('nb-today').classList.add('on');
+    renderDay(S.day);
+    document.documentElement.style.setProperty('--dc',dc(S.day));
+  }else if(v==='week'){
+    document.getElementById('week-view').classList.add('show');
+    document.getElementById('nb-week').classList.add('on');
+    renderWeek();
+  }else if(v==='settings'){
+    document.getElementById('settings-view').classList.add('show');
+    document.getElementById('nb-settings').classList.add('on');
+    renderSettings();
+  }
+  document.getElementById('content').scrollTop=0;
+}
+
+function tog(e,d,id){
+  e.stopPropagation();
+  const k=d+'_'+id;
+  S.done[k]=!S.done[k];
+  const dn=doneCount(d),t=total(d);
+  if(S.done[k]){
+    if(dn===t){
+      toast('💪 Day complete! Charaiveti.');
+      bumStreak();
+    }else toast(`✓ ${dn}/${t} done`);
+  }
+  save();renderDay(d);renderCarousel();
+}
+
+function expandToggle(e,id){
+  e.stopPropagation();
+  document.getElementById('xc_'+id).classList.toggle('open');
+  // Auto-open cue panel too
+  const card=document.getElementById('xc_'+id);
+  if(card.classList.contains('open')){
+    card.querySelector('.cue-panel').style.maxHeight='80px';
+    card.querySelector('.cue-panel').style.padding='9px 13px 12px';
+  }
+}
+
+function editToggle(e,id,d){
+  e.stopPropagation();
+  const card=document.getElementById('xc_'+id);
+  const editing=card.classList.toggle('editing');
+  const fields=[
+    document.getElementById('xn_'+id),
+    document.getElementById('xs_'+id),
+    document.getElementById('xr_'+id),
+    document.getElementById('xl_'+id),
+    document.getElementById('xc2_'+id),
+  ];
+  // Always open cue panel in edit mode
+  card.classList.add('open');
+  if(editing){
+    fields.forEach(f=>{if(f)f.contentEditable='true'});
+    fields[0]&&fields[0].focus();
+    toast('✎ Tap any field to edit');
+  }else{
+    fields.forEach(f=>{if(f)f.contentEditable='false'});
+    const k=d+'_'+id;
+    const n=fields[0]?.textContent.trim();
+    const s=fields[1]?.textContent.replace(' sets','').trim();
+    const r=fields[2]?.textContent.trim();
+    const ld=fields[3]?.textContent.trim();
+    const c=fields[4]?.textContent.trim();
+    if(!S.edits[k])S.edits[k]={};
+    if(n)S.edits[k].n=n;
+    if(s)S.edits[k].s=s;
+    if(r)S.edits[k].r=r;
+    if(ld)S.edits[k].ld=ld;
+    if(c)S.edits[k].c=c;
+    save();
+    toast('✓ Saved');
+  }
+}
+
+function toggleMob(){
+  const c=document.getElementById('mcrd');
+  c.classList.toggle('open');
+}
+
+function bumStreak(){
+  const today=new Date().toDateString();
+  if(S.lastDate===today)return;
+  const y=new Date();y.setDate(y.getDate()-1);
+  if(S.lastDate===y.toDateString())S.streak++;
+  else S.streak=S.lastDate?1:(S.streak+1);
+  S.lastDate=today;
+  document.getElementById('streak-n').textContent=S.streak;
+  save();
+}
+
+// ── PAIN ─────────────────────────────────────────────────────
+function openPain(){document.getElementById('pain-overlay').classList.add('on')}
+function closePainOuter(e){if(e.target===e.currentTarget)document.getElementById('pain-overlay').classList.remove('on')}
+function logPain(l){
+  S.painLog.push({l,d:new Date().toISOString()});
+  if(S.painLog.length>30)S.painLog.shift();
+  save();
+  document.getElementById('pain-overlay').classList.remove('on');
+  const chip=document.getElementById('pain-chip');
+  chip.className='pain-chip p'+l;
+  const msgs={g:'💚 Green — Train as programmed',a:'🟡 Amber — Reduce load 20%',r:'🔴 Red — Rest. See a doctor.'};
+  const cls={g:'',a:'warn',r:'err'};
+  toast(msgs[l],cls[l]);
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+let _tt;
+function toast(m,cls=''){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.className='toast on '+(cls||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),2800);
+}
+
+function resetAll(){
+  if(confirm('Reset all exercise progress? Custom edits and streak will be kept.')){
+    S.done={};save();
+    renderDay(S.day);renderCarousel();
+    toast('Progress reset');
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+load();
+renderCarousel();
+renderDay(S.day);
+document.getElementById('streak-n').textContent=S.streak;
+
+// Restore pain chip color
+if(S.painLog.length){
+  const l=S.painLog[S.painLog.length-1].l;
+  document.getElementById('pain-chip').className='pain-chip p'+l;
+}
+
+// Service worker
+if('serviceWorker' in navigator){
+  const sw=`const C='forge-v1';
+self.addEventListener('install',e=>self.skipWaiting());
+self.addEventListener('activate',e=>self.clients.claim());
+self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));`;
+  const blob=new Blob([sw],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>
